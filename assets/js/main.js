@@ -211,3 +211,160 @@
   document.addEventListener('scroll', navmenuScrollspy);
 
 })();
+
+/**
+ * Request-a-quote flip cards.
+ * The existing pricing markup is rearranged here so the three cards can share
+ * the same component behavior without affecting pricing cards elsewhere.
+ */
+(function() {
+  'use strict';
+
+  if (!document.body.classList.contains('quote-page')) return;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .quote-page .pricing-item {
+      min-height: 390px;
+      padding: 0;
+      perspective: 1200px;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .quote-page .quote-card-inner {
+      position: relative;
+      width: 100%;
+      min-height: 390px;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(.2,.7,.2,1);
+    }
+
+    .quote-page .pricing-item:hover .quote-card-inner,
+    .quote-page .pricing-item:focus-within .quote-card-inner,
+    .quote-page .pricing-item.is-flipped .quote-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .quote-page .quote-card-face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 30px;
+      border-radius: 8px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overflow: hidden;
+    }
+
+    .quote-page .quote-card-front {
+      align-items: center;
+      text-align: center;
+      background: var(--surface-color);
+      border: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .quote-page .quote-card-front::after {
+      content: 'View inclusions';
+      margin-top: 22px;
+      color: var(--accent-color);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .quote-page .quote-card-front .pricing-header h3 {
+      margin-bottom: 15px;
+    }
+
+    .quote-page .quote-card-back {
+      justify-content: space-between;
+      background: var(--accent-color);
+      color: var(--contrast-color);
+      transform: rotateY(180deg);
+    }
+
+    .quote-page .quote-card-back ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .quote-page .quote-card-back li,
+    .quote-page .quote-card-back li span,
+    .quote-page .quote-card-back li i {
+      color: var(--contrast-color);
+    }
+
+    .quote-page .quote-card-back li {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 8px 0;
+    }
+
+    .quote-page .quote-card-back .buy-btn {
+      color: var(--accent-color);
+      background: var(--contrast-color);
+    }
+
+    @media (max-width: 767px) {
+      .quote-page .pricing-item,
+      .quote-page .quote-card-inner {
+        min-height: 350px;
+      }
+
+      .quote-page .quote-card-face {
+        padding: 30px 24px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .quote-page .quote-card-inner {
+        transition: none;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.querySelectorAll('.quote-page #pricing .pricing-item').forEach((card) => {
+    const header = card.querySelector('.pricing-header');
+    const list = card.querySelector(':scope > ul');
+    const action = card.querySelector(':scope > .text-center');
+    if (!header || !list || !action) return;
+
+    const inner = document.createElement('div');
+    inner.className = 'quote-card-inner';
+
+    const front = document.createElement('div');
+    front.className = 'quote-card-face quote-card-front';
+    front.appendChild(header);
+
+    const back = document.createElement('div');
+    back.className = 'quote-card-face quote-card-back';
+    back.append(list, action);
+
+    inner.append(front, back);
+    card.replaceChildren(inner);
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `${header.querySelector('h3')?.textContent || 'Quote'} details`);
+
+    card.addEventListener('click', (event) => {
+      if (event.target.closest('a')) return;
+      card.classList.toggle('is-flipped');
+    });
+
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        card.classList.toggle('is-flipped');
+      }
+    });
+  });
+})();
